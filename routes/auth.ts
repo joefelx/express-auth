@@ -10,7 +10,8 @@ type StatusType =
   | "LOGGED_IN"
   | "LOGGED_OUT"
   | "USER_EXISTS"
-  | "LOGIN_FAILED"
+  | "USER_NOT_FOUND"
+  | "FAILED"
   | "UNAUTHORISED"
   | "INVALID_PASSWORD"
   | "TOKEN_EXPIRED";
@@ -56,6 +57,55 @@ router.post("/signup", async (req, res) => {
     res.status(201).json(response);
   } catch (error) {
     console.log(error);
+
+    const response: ResponseType = {
+      status: "FAILED",
+      message: "Something went wrong!",
+    };
+
+    return res.status(500).json(response);
+  }
+});
+
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email: email });
+
+    if (user && password) {
+      await bcrypt.compare(password, String(user.password)).then(() => {
+        const response: ResponseType = {
+          status: "LOGGED_IN",
+          message: user.token,
+        };
+
+        return res.status(200).json(response);
+      });
+
+      const response: ResponseType = {
+        status: "INVALID_PASSWORD",
+        message: "Provide a valid password",
+      };
+
+      return res.status(400).json(response);
+    }
+
+    const response: ResponseType = {
+      status: "USER_NOT_FOUND",
+      message: "Please Sign up a new user.",
+    };
+
+    return res.status(404).json(response);
+  } catch (error) {
+    console.log(error);
+
+    const response: ResponseType = {
+      status: "FAILED",
+      message: "Something went wrong!",
+    };
+
+    return res.status(500).json(response);
   }
 });
 
